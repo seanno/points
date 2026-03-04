@@ -14,7 +14,12 @@ const configMap = {
   MAP_ZOOM_DEFAULT: 13,
 
   POI_FETCH_RADIUS_MILES: 80,
-  POI_FETCH_TRIGGER_MILES: 10
+  POI_FETCH_TRIGGER_MILES: 10,
+
+  CLAUDE_API_VERSION: '2023-06-01',
+  CLAUDE_MODEL: 'claude-sonnet-4-6',
+  CLAUDE_MAX_TOKENS: 1024,
+  CLAUDE_ROLE: 'user'
 }
 
 export function cfg(name) {
@@ -34,7 +39,8 @@ const debugMap = {
   poi: false, // related to points of interest
   poideets: false, // verbose poi details
   
-  wiki: false // wikidata queries
+  wiki: false, // wikidata queries
+  claude: true // claude queries
 }
 
 export function dbg(msg) {

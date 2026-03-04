@@ -4,6 +4,7 @@
 
 import { cfg, dbg } from './config.js';
 import { Orchestrator } from './Orchestrator.js';
+import { askClaude, storeClaudeToken, getClaudeToken, clearClaudeToken } from './claude.js';
 
 // +--------------------------+
 // | Setup & Window Lifecycle |
@@ -15,6 +16,7 @@ window.addEventListener('load', (evt) => {
   
   orchestrator = new Orchestrator(newPos, newPoi);
 
+  $('#more-button').click((evt) => explainPoi(evt));
   $('#next-button').click((evt) => orchestrator.popNextPOI());
   $('#share-button').click((evt) => shareCurrentPoi());
   $('#recenter-button').click((evt) => manualModeOff());
@@ -74,22 +76,57 @@ function newPoi(newPoi) {
 // | POI Pane |
 // +----------+
 
-function shareCurrentPoi() {
+let synth = window.speechSynthesis;
+let speaking = false;
+
+function explainPoi(evt) {
+
+  // when speaking, more-button cancels it
+  if (cancelSpeaking()) return;
   
   if (!poi) {
 	alert('No POI selected');
 	return;
   }
+
+  let currentToken = getClaudeToken();
+
+  // shortcut to clear old token
+  if (currentToken && event.shiftKey) {
+	if (window.confirm('Delete saved Claude API Key?')) {
+	  clearClaudeToken();
+	  currentToken = null;
+	  window.alert('Key cleared');
+	}
+  }
+
+  // make sure we have a valid one
+  if (!currentToken) {
+	const newToken = window.prompt('This feature requires a Claude API Key. It will be ' +
+								   'saved locally in your browser and not sent to any ' +
+								   'server other than the Anthropic API.');
+
+	if (!newToken) return;
+	storeClaudeToken(newToken);
+  }
+
+  // and go!
+  updateMoreButton('asking');
+
+  askClaude(poi.title, null, null).then((response) => {
+	const txt = (response.response || response.error);
+	const html = txt.replaceAll('\n', '<br/>');
 	
-  navigator.share({
-	title: $('#poi-title').text(),
-	text: $('#poi-description').text(),
-	url: 'https://google.com/search?q=' + encodeURIComponent(poi.title)
+	$('#poi-description').html(html);
+	updateMoreButton('ready');
+	startSpeaking();
   });
 }
 
 function updatePoiPane() {
 
+  cancelSpeaking();
+  
   if (!poi) return;
 
   dbg(`poideets.poi: ${JSON.stringify(poi)}`);
@@ -110,6 +147,73 @@ function updatePoiPane() {
   else {
 	$('#poi-image').hide();
   }
+}
+
+function shareCurrentPoi() {
+  
+  if (!poi) {
+	alert('No POI selected');
+	return;
+  }
+	
+  navigator.share({
+	title: $('#poi-title').text(),
+	text: $('#poi-description').text(),
+	url: 'https://google.com/search?q=' + encodeURIComponent(poi.title)
+  });
+}
+
+function startSpeaking() {
+
+  if (!synth) return;
+
+  const utterance = new SpeechSynthesisUtterance($('#poi-description').text());
+	  
+  utterance.onend = (evt) => {
+	updateMoreButton('ready');
+	speaking = false;
+  }
+  
+  updateMoreButton('speaking');
+  speaking = true;
+  synth.speak(utterance);
+}
+
+function cancelSpeaking() {
+
+  if (!synth) return(false);
+  if (!speaking) return(false);
+  
+  updateMoreButton('ready');
+  speaking = false;
+  synth.cancel();
+  return(true);
+}
+
+function updateMoreButton(state) {
+
+  let txt = 'More';
+  let disabled = false;
+  
+  switch (state) {
+	  
+	case 'ready':
+	  // all good
+	  break;
+
+	case 'asking':
+	  txt = 'Asking...';
+	  disabled = true;
+	  break;
+
+	case 'speaking':
+	  txt = 'Speaking...';
+	  disabled = false;
+	  break;
+  }
+
+  $('#more-button').text(txt);
+  $('#more-button').prop('disabled', disabled);
 }
 
 // +----------+
@@ -163,7 +267,6 @@ function adjustMap() {
 	  });
 
 	  poiMarker = L.marker([poi.location.lat, poi.location.lng], {icon: poiIcon}).addTo(map);
-	  console.log(`poiMarker created at lat=${poi.location.lat} lng=${poi.location.lng}`);
 	}
   }
 }

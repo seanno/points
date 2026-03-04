@@ -32,8 +32,10 @@ The singleton Orchestrator instance that watches location and manages the POI qu
 - `#poi-image-img` - Actual `<img>` tag (set src attribute)
 - `#poi-description` - Element containing description text (prepended with type in parentheses)
 - `.poi-ux` - Class for elements to show/hide together when POI loads
+- `#poi-controls` - Container for button controls
+- `#more-button` - Fetches enriched description from Claude API and reads it aloud
+- `#next-button` - Button to manually advance to next POI
 - `#share-button` - Share button using Web Share API
-- `#read-button` - Text-to-speech button (not yet implemented)
 
 ## Showing/Hiding POI Elements
 
@@ -49,6 +51,12 @@ Initially, most POI elements are hidden. Elements with class `.poi-ux` are shown
 ## site/config.js
 Contains configuration constants and debug helper. Use `cfg('KEY')` to access config values and `dbg(msg)` for debug logging.
 
+Includes Claude API configuration:
+- `CLAUDE_API_VERSION` - API version string
+- `CLAUDE_MODEL` - Model identifier (claude-sonnet-4-6)
+- `CLAUDE_MAX_TOKENS` - Maximum tokens for Claude responses
+- `CLAUDE_ROLE` - Role for Claude messages
+
 ## site/geo.js
 Geographic utility functions:
 - `calculateDistanceMiles(lat1, lng1, lat2, lng2)` - Distance between two points
@@ -62,6 +70,14 @@ WikiData API integration:
 - SPARQL query filters for interesting types (museums, castles, national parks, etc.)
 - Uses WikiData label service to translate type IDs to human-readable strings (e.g., "museum", "castle")
 - Converts HTTP image URLs to HTTPS for security
+
+## site/claude.js
+Claude API integration for enriched POI descriptions:
+- `askClaude(title, city, state)` - Fetches enriched description from Claude API
+- `getClaudeToken()` / `storeClaudeToken(token)` / `clearClaudeToken()` - Manage API token in localStorage
+- Returns promise with `{ response: string }` or `{ error: string }`
+- Constructs prompt asking Claude to act as a friendly travel guide
+- NOTE: city and state parameters are accepted but not yet populated from POI data
 
 ## site/Orchestrator.js
 Core singleton that manages:
@@ -92,6 +108,13 @@ Main application logic (previously described as "app.js" in earlier docs):
 - Updates POI pane with content
 - Handles share functionality via Web Share API
 - Implements smart zoom calculation to keep both position and POI visible
+- Implements "More" button functionality:
+  - Prompts for Claude API token on first use (stored in localStorage)
+  - Fetches enriched description from Claude API
+  - Displays enriched content in POI pane
+  - Automatically reads description aloud using Web Speech API
+- Implements text-to-speech using `window.speechSynthesis`
+- Manages speaking state (click "More" while speaking to cancel)
 
 # Architecture Notes
 
@@ -99,7 +122,7 @@ Main application logic (previously described as "app.js" in earlier docs):
 
 1. **Initialization** (site/index.js `load` event)
    - Create single Orchestrator instance with `newPos` and `newPoi` callbacks
-   - Set up button click handlers (#next-button, #share-button, #recenter-button)
+   - Set up button click handlers (#more-button, #next-button, #share-button, #recenter-button)
    - Set up visibility change handler to pause/resume Orchestrator timers
 
 2. **Position Updates** (via `newPos` callback)
@@ -126,6 +149,23 @@ Main application logic (previously described as "app.js" in earlier docs):
 6. **Share Functionality**
    - Uses Web Share API (`navigator.share()`)
    - Shares POI title, description, and Google search URL
+
+7. **More Button / Claude Integration** (`explainPoi()`)
+   - Clicking "More" while speaking cancels speech
+   - Prompts for Claude API token on first use
+   - Shift-click to clear saved token
+   - Fetches enriched description from Claude API
+   - Updates button states: "More" → "Asking..." → "Speaking..."
+   - Displays enriched description in `#poi-description`
+   - Automatically speaks description using `speechSynthesis.speak()`
+   - Button returns to "More" when speech completes
+
+8. **Text-to-Speech** (`startSpeaking()` / `cancelSpeaking()`)
+   - Uses Web Speech API (`window.speechSynthesis`)
+   - Reads content from `#poi-description`
+   - Tracks speaking state
+   - Clicking "More" while speaking cancels speech
+   - Updates button to "Speaking..." during playback
 
 ## Leaflet Setup
 
@@ -185,8 +225,15 @@ $('#poi-image-img').attr('src', poi.image);
 $('#next-button').prop('disabled', true);
 
 // Event handlers
+$('#more-button').click((evt) => explainPoi(evt));
 $('#recenter-button').click((evt) => manualModeOff());
 $('#share-button').click((evt) => shareCurrentPoi());
+
+// Web Speech API
+const utterance = new SpeechSynthesisUtterance($('#poi-description').text());
+utterance.onend = (evt) => { /* handle completion */ };
+window.speechSynthesis.speak(utterance);
+window.speechSynthesis.cancel(); // to stop speaking
 ```
 
 ## Zoom Calculation
@@ -216,10 +263,14 @@ This approach handles POIs in any direction (east/west/north/south) and works in
 - ✓ Share functionality using Web Share API
 - ✓ Manual POI advancement (next button)
 - ✓ Visibility change handling (pause/resume on tab switch)
+- ✓ Claude API integration for enriched descriptions
+- ✓ Claude API token management (localStorage)
+- ✓ Text-to-speech using Web Speech API
+- ✓ "More" button to fetch and speak enriched content
 
 ## To Be Implemented
 
-- Read functionality using Web Speech API (`speechSynthesis.speak()`)
+- City and state extraction/fetching for POIs (parameters exist in `askClaude()` but are not yet populated)
 
 # Testing Tips
 
@@ -230,3 +281,6 @@ This approach handles POIs in any direction (east/west/north/south) and works in
 - Test with POIs at various distances and directions
 - Verify share functionality on mobile device
 - Check visibility handling: switch tabs and verify timers pause/resume
+- Test Claude integration: click "More" button, provide API token, verify enriched description and speech
+- Test speech cancellation: click "More" while speaking to cancel
+- Test token management: shift-click "More" to clear saved token
