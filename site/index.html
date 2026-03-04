@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ctx - Road Trip Points of Interest</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+
+  <!-- Local CSS -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <div id="app-container" class="app-container">
+
+    <!-- Map Pane -->
+    <div id="map-wrapper" class="pane-wrapper">
+      <div id="map-pane" class="map-pane">
+        <div id="map-loading" class="map-loading">Getting location...</div>
+        <div id="map-container" class="map-container"></div>
+        <button id="recenter-button" class="recenter-button" style="display: none;">Recenter</button>
+      </div>
+    </div>
+
+    <!-- POI Pane -->
+    <div id="poi-wrapper" class="pane-wrapper">
+      <div id="poi-pane" class="poi-pane">
+
+        <div id="poi-content" class="poi-content">
+          <div id="poi-loading" class="poi-loading">loading...</div>
+
+          <h1 id="poi-title" class="poi-title poi-ux" style="display: none;"></h1>
+          <div id="poi-image" class="poi-image poi-ux" style="display: none;">
+            <img id="poi-image-img" src="" alt="">
+          </div>
+          <div id="poi-description" class="poi-description poi-ux" style="display: none;">
+            <p id="poi-description-text"></p>
+          </div>
+        </div>
+
+        <div id="poi-controls" class="poi-controls poi-ux" style="display: none;">
+          <button id="read-button" class="control-button">Read</button>
+          <button id="next-button" class="control-button">Next</button>
+          <button id="share-button" class="control-button">Share</button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous"></script>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+
+  <!-- Local JavaScript modules -->
+  <script type="module" src="index.js"></script>
+
+</body>
+</html>
