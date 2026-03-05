@@ -1,0 +1,10 @@
+{
+  "name": "Road Trip Points",
+  "short_name": "Points",
+  "description": "Road trip app showing nearby points of interest",
+  "start_url": "/index.html",
+  "display": "fullscreen",
+  "orientation": "any",
+  "theme_color": "#2196F3",
+  "background_color": "#ffffff"
+}
