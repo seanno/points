@@ -13,7 +13,7 @@ The singleton Orchestrator instance that watches location and manages the POI qu
 
 # JavaScript Modules
 
-## site/config.js
+## config.js
 Configuration constants and debug helpers:
 - `cfg('KEY')` - Access config values
 - `dbg(msg)` - Debug logging with category prefixes (e.g., "poi.something")
@@ -23,13 +23,13 @@ Configuration constants and debug helpers:
   - POI fetching: `POI_FETCH_RADIUS_MILES` (80), `POI_FETCH_TRIGGER_MILES` (10)
   - Claude API: `CLAUDE_API_VERSION`, `CLAUDE_MODEL` (claude-sonnet-4-6), `CLAUDE_MAX_TOKENS` (1024)
 
-## site/geo.js
+## geo.js
 Geographic utility functions:
 - `calculateDistanceMiles(lat1, lng1, lat2, lng2)` - Distance between two points
 - `calculateBearingDegrees(lat1, lng1, lat2, lng2)` - Bearing from point 1 to point 2
 - `angleDifferenceDegrees(angle1, angle2)` - Difference between two angles
 
-## site/wikidata.js
+## wikidata.js
 WikiData API integration:
 - `fetchPoints(lat, lng, radiusMiles)` - Fetches POIs near a location
 - Returns array of POI objects: `{ id, title, description, type, location: {lat, lng}, image, url, adminDiv1, adminDiv2, adminDiv3, adminDiv4 }`
@@ -38,7 +38,7 @@ WikiData API integration:
 - Converts HTTP image URLs to HTTPS for security
 - Includes administrative divisions (adminDiv fields) for location context
 
-## site/claude.js
+## claude.js
 Claude API integration for enriched POI descriptions:
 - `askClaude(poi)` - Fetches enriched description from Claude API
 - `getClaudeToken()` / `storeClaudeToken(token)` / `clearClaudeToken()` - Manage API token in localStorage
@@ -46,7 +46,7 @@ Claude API integration for enriched POI descriptions:
 - Constructs prompt asking Claude to act as a friendly travel guide
 - Prompt instructs Claude to be concise, engaging, and suitable for text-to-speech
 
-## site/Orchestrator.js
+## Orchestrator.js
 Core singleton managing the app's location and POI logic:
 - Geolocation watching via HTML5 Geolocation API
 - POI queue management (fetching, scoring, sorting, deduplication)
@@ -69,7 +69,7 @@ Key features:
 - Scores POIs by distance and bearing (prefers points ahead of vehicle, weights POIs behind × 2)
 - Maintains history to avoid repeating POIs during session
 
-## site/index.js
+## index.js
 Main application logic:
 - Initializes Orchestrator with `newPos` and `newPoi` callbacks
 - Manages manual mode (click map to explore, recenter button to resume)
@@ -90,7 +90,7 @@ Main application logic:
 
 ## Implementation Flow
 
-1. **Initialization** (site/index.js `load` event)
+1. **Initialization** (index.js `load` event)
    - Create single Orchestrator instance with `newPos` and `newPoi` callbacks
    - Set up button click handlers
    - Set up visibility change handler to pause/resume Orchestrator timers
