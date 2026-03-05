@@ -11,7 +11,7 @@ import { dbg } from './config.js';
 // +------------+
 
 const WIKIDATA_QUERY_ENDPOINT = 'https://query.wikidata.org/sparql'
-const QUERY_TIMEOUT_MS = 45000 // 45 seconds
+const QUERY_TIMEOUT_MS = 90000 // 90 seconds
 
 // +-----------+
 // | Utilities |
@@ -31,33 +31,38 @@ function buildPOIQuery(lat, lng, radiusMiles) {
   const radiusKm = radiusMiles * 1.60934
 
   return `
-    SELECT DISTINCT ?item ?itemLabel ?itemDescription ?location ?image ?interestingTypeLabel 
-                      ?adminDiv1Label ?adminDiv2Label ?adminDiv3Label ?adminDiv4Label WHERE {
+    SELECT ?item ?itemLabel ?itemDescription ?location
+           (MIN(?dist) AS ?minDist)
+           (SAMPLE(?image) AS ?image)
+           (SAMPLE(?interestingTypeLabel) AS ?interestingTypeLabel)
+           (SAMPLE(?adminDiv1Label) AS ?adminDiv1Label)
+           (SAMPLE(?adminDiv2Label) AS ?adminDiv2Label)
+           (SAMPLE(?adminDiv3Label) AS ?adminDiv3Label)
+           (SAMPLE(?adminDiv4Label) AS ?adminDiv4Label)
+    WHERE {
 
       # Search for items with coordinates within radius
       SERVICE wikibase:around {
         ?item wdt:P625 ?location.
         bd:serviceParam wikibase:center "Point(${lng} ${lat})"^^geo:wktLiteral.
         bd:serviceParam wikibase:radius "${radiusKm}".
+        bd:serviceParam wikibase:distance ?dist.
       }
 
-      # Filter for interesting types of POIs (simplified - direct instance only)
+      # Filter for interesting types of POIs (using broader categories + hierarchy)
       VALUES ?interestingType {
-        wd:Q570116    # tourist attraction
+        wd:Q570116    # tourist attraction (catches castles, lighthouses, monuments, etc.)
         wd:Q33506     # museum
-        wd:Q23413     # castle
         wd:Q863454    # national park
-        wd:Q4989906   # monument
-        wd:Q81799     # historic building
-        wd:Q820477    # lighthouse
-        wd:Q13218706  # historic site
-        wd:Q8502      # mountain
-        wd:Q23397     # lake
-        wd:Q34038     # waterfall
+        wd:Q839954    # archaeological site
+        wd:Q271669    # landform (mountains, valleys, hills, canyons, etc.)
+        wd:Q15324     # body of water (lakes, rivers, waterfalls, springs, etc.)
+        wd:Q811979    # architectural structure (bridges, towers, lighthouses, monuments)
+        wd:Q1785071   # facility (mines, dams, industrial sites, etc.)
       }
 
-      # Item must be instance of an interesting type (removed subclass search for speed)
-      ?item wdt:P31 ?interestingType.
+      # Item must be instance of something that is a subclass of interesting type
+      ?item wdt:P31/wdt:P279* ?interestingType.
 
       # Get optional image
       OPTIONAL { ?item wdt:P18 ?image. }
@@ -81,6 +86,8 @@ function buildPOIQuery(lat, lng, radiusMiles) {
         bd:serviceParam wikibase:language "en".
       }
     }
+    GROUP BY ?item ?itemLabel ?itemDescription ?location
+    ORDER BY ASC(?minDist)
     LIMIT 50
   `
 }
