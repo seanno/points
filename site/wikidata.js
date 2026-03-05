@@ -31,7 +31,9 @@ function buildPOIQuery(lat, lng, radiusMiles) {
   const radiusKm = radiusMiles * 1.60934
 
   return `
-    SELECT DISTINCT ?item ?itemLabel ?itemDescription ?location ?image ?interestingTypeLabel WHERE {
+    SELECT DISTINCT ?item ?itemLabel ?itemDescription ?location ?image ?interestingTypeLabel 
+                      ?adminDiv1Label ?adminDiv2Label ?adminDiv3Label ?adminDiv4Label WHERE {
+
       # Search for items with coordinates within radius
       SERVICE wikibase:around {
         ?item wdt:P625 ?location.
@@ -59,6 +61,20 @@ function buildPOIQuery(lat, lng, radiusMiles) {
 
       # Get optional image
       OPTIONAL { ?item wdt:P18 ?image. }
+
+      # Get administrative divisions - skip div1, get div2, div3, and div4
+      OPTIONAL {
+        ?item wdt:P131 ?adminDiv1.
+        OPTIONAL {
+          ?adminDiv1 wdt:P131 ?adminDiv2.
+          OPTIONAL {
+            ?adminDiv2 wdt:P131 ?adminDiv3.
+            OPTIONAL {
+              ?adminDiv3 wdt:P131 ?adminDiv4.
+            }
+          }
+        }
+      }
 
       # Get labels and descriptions
       SERVICE wikibase:label {
@@ -96,6 +112,10 @@ function parseResults(data) {
       location: { lat, lng },
       image: img,
       url: binding.item.value,
+      adminDiv1: binding.adminDiv1Label?.value || null,
+      adminDiv2: binding.adminDiv2Label?.value || null,
+      adminDiv3: binding.adminDiv3Label?.value || null,
+      adminDiv4: binding.adminDiv4Label?.value || null,
     }
   }).filter(poi => poi.location.lat !== null && poi.location.lng !== null)
 }

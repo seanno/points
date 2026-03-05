@@ -40,7 +40,7 @@ const debugMap = {
   poideets: false, // verbose poi details
   
   wiki: false, // wikidata queries
-  claude: true // claude queries
+  claude: false // claude queries
 }
 
 export function dbg(msg) {

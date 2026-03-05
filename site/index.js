@@ -113,10 +113,10 @@ function explainPoi(evt) {
   // and go!
   updateMoreButton('asking');
 
-  askClaude(poi.title, null, null).then((response) => {
+  askClaude(poi).then((response) => {
 	const txt = (response.response || response.error);
 	const html = txt.replaceAll('\n', '<br/>');
-	
+
 	$('#poi-description').html(html);
 	updateMoreButton('ready');
 	startSpeaking();

@@ -26,7 +26,9 @@ export function clearClaudeToken() {
 // | askClaude |
 // +-----------+
 
-export async function askClaude(title, city, state) {
+// input poi as fetched from wikidata
+
+export async function askClaude(poi) {
 
   const token = getClaudeToken();
   if (!token) return({ error: 'no_token' });
@@ -44,7 +46,7 @@ export async function askClaude(title, city, state) {
       max_tokens: cfg('CLAUDE_MAX_TOKENS'),
       messages: [{
         role: cfg('CLAUDE_ROLE'),
-        content: getPrompt(title, city, state)
+        content: getPrompt(poi)
       }]
     })
   });
@@ -59,20 +61,15 @@ export async function askClaude(title, city, state) {
   return({ response: data.content[0].text });
 }
 
-function getPrompt(title, city, state) {
+function getPrompt(poi) {
 
-  let poiString = title;
-  if (city || state) poiString += ' in ';
-  if (city) poiString += city;
-  if (city && state) poiString += ', ';
-  if (state) poiString += state;
-	
   return(`
-    You are a friendly, local travel guide. Please write a paragraph
-    introducing me to the ${poiString}. What is it, a few fun facts, just 
-    enough to get me interested in taking a closer look. Be concise, not
-    a lot of exclamation points, but engaging. This will be read aloud so 
-    please keep that in mind. Return only the paragraph itself.`
+    You are a friendly, local travel guide. Please write a short paragraph
+    introducing me to the point of interest in the JSON object below. 
+    What is it, a few fun facts, just enough to get me interested in 
+    taking a closer look. Be concise, not a lot of exclamation points, 
+    but engaging. This will be read aloud so please keep that in mind. 
+    Return only the paragraph itself. ${JSON.stringify(poi)} `
   );
 }
 
