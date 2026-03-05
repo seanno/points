@@ -23,7 +23,7 @@ window.addEventListener('load', (evt) => {
 
   $('#fs-button').click((evt) => {
 	if (document.fullscreenElement) document.exitFullscreen();
-	else document.documentElement.requestFullscreen().catch((err) => alert(JSON.stringify(err)));
+	else document.documentElement.requestFullscreen();
   });
   
 });
