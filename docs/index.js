@@ -25,7 +25,8 @@ window.addEventListener('load', (evt) => {
 	if (document.fullscreenElement) document.exitFullscreen();
 	else document.documentElement.requestFullscreen();
   });
-  
+
+  requestWakeLock();
 });
 
 document.addEventListener('visibilitychange', (evt) => {
@@ -33,6 +34,14 @@ document.addEventListener('visibilitychange', (evt) => {
   if (document.hidden) orchestrator.clearTimers();
   else orchestrator.startTimers();
 });
+
+document.addEventListener('visibilitychange', (evt) => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+
+async function requestWakeLock() {
+  if (navigator.wakeLock) navigator.wakeLock.request('screen');
+}
 
 // +-------------+
 // | Manual Mode |
