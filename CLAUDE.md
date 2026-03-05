@@ -11,6 +11,18 @@ The app provides contextual information during drives - highlighting interesting
 
 The singleton Orchestrator instance that watches location and manages the POI queue created unnecessary complexity with React's state management, closures, and re-render cycles. This simpler approach uses plain DOM manipulation with callbacks.
 
+# File Structure
+
+All application files are located in the `docs/` directory:
+- `docs/index.html` - Main HTML file
+- `docs/index.css` - Styles
+- `docs/index.js` - Main application logic
+- `docs/config.js` - Configuration constants
+- `docs/geo.js` - Geographic utilities
+- `docs/wikidata.js` - WikiData API integration
+- `docs/claude.js` - Claude API integration
+- `docs/Orchestrator.js` - Core location and POI management
+
 # JavaScript Modules
 
 ## config.js

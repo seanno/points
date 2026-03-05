@@ -20,6 +20,12 @@ window.addEventListener('load', (evt) => {
   $('#next-button').click((evt) => orchestrator.popNextPOI());
   $('#share-button').click((evt) => shareCurrentPoi());
   $('#recenter-button').click((evt) => manualModeOff());
+
+  $('#fs-button').click((evt) => {
+	if (document.fullscreenElement) document.exitFullscreen();
+	else document.documentElement.requestFullscreen();
+  });
+  
 });
 
 document.addEventListener('visibilitychange', (evt) => {
