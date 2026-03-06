@@ -245,7 +245,11 @@ function adjustMap() {
   
   // map sure we have a map
   if (!map) {
-	map = L.map('map-container');
+	map = L.map('map-container', {
+	  rotate: true,
+	  touchRotate: true,
+	  shiftKeyRotate: false
+	});
 
 	// Add tile layer
 	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -260,7 +264,13 @@ function adjustMap() {
   }
 
   map.setView([pos.lat, pos.lng], zoom);
-  
+
+  // Set map bearing to current direction of travel
+  const bearing = orchestrator.getCurrentBearing();
+  if (bearing !== null && map.setBearing) {
+    map.setBearing(bearing);
+  }
+
   // pos
   if (posMarker) posMarker.setLatLng([pos.lat, pos.lng]);
   else posMarker = L.marker([pos.lat, pos.lng]).addTo(map);
