@@ -245,11 +245,7 @@ function adjustMap() {
   
   // map sure we have a map
   if (!map) {
-	map = L.map('map-container', {
-	  rotate: true,
-	  touchRotate: true,
-	  shiftKeyRotate: false
-	});
+	map = L.map('map-container');
 
 	// Add tile layer
 	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -265,15 +261,50 @@ function adjustMap() {
 
   map.setView([pos.lat, pos.lng], zoom);
 
-  // Set map bearing to current direction of travel
+  // Update position marker with direction arrow
   const bearing = orchestrator.getCurrentBearing();
-  if (bearing !== null && map.setBearing) {
-    map.setBearing(bearing);
-  }
 
-  // pos
-  if (posMarker) posMarker.setLatLng([pos.lat, pos.lng]);
-  else posMarker = L.marker([pos.lat, pos.lng]).addTo(map);
+  if (posMarker) {
+	posMarker.setLatLng([pos.lat, pos.lng]);
+	// Update rotation via CSS on the SVG element, not the marker container
+	if (bearing !== null) {
+	  const markerElement = posMarker.getElement();
+	  if (markerElement) {
+		const svg = markerElement.querySelector('svg');
+		if (svg) {
+		  svg.style.transform = `rotate(${bearing}deg)`;
+		}
+	  }
+	}
+  } else {
+	// Create arrow icon for position marker
+	const arrowIcon = L.divIcon({
+	  html: `<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="transform-origin: center; transition: transform 0.3s ease-out;">
+		<g transform="translate(20,20)">
+		  <circle cx="0" cy="0" r="18" fill="#3388ff" opacity="0.3" stroke="#3388ff" stroke-width="2"/>
+		  <path d="M 0,-12 L 6,8 L 0,4 L -6,8 Z" fill="#3388ff" stroke="white" stroke-width="1.5"/>
+		</g>
+	  </svg>`,
+	  className: 'direction-arrow-marker',
+	  iconSize: [40, 40],
+	  iconAnchor: [20, 20]
+	});
+
+	posMarker = L.marker([pos.lat, pos.lng], {
+	  icon: arrowIcon
+	}).addTo(map);
+
+	// Set initial rotation
+	if (bearing !== null) {
+	  const markerElement = posMarker.getElement();
+	  if (markerElement) {
+		const svg = markerElement.querySelector('svg');
+		if (svg) {
+		  svg.style.transform = `rotate(${bearing}deg)`;
+		}
+	  }
+	}
+  }
 
   // poi
   if (poi) {
