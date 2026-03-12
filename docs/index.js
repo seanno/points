@@ -356,8 +356,14 @@ function calculateZoom() {
 
   let zoom = Math.log2(156543.03392 * Math.cos(pos.lat * Math.PI / 180) / desiredMetersPerPixel);
 
+  dbg(`zoom. dist: ${distance}m
+             map: ${mapSize.x}dx, ${mapSize.y}dy
+             diff: ${latDiff}lat, ${lngDiff}lng
+             mpp: ${desiredMetersPerPixel}m,  (${desiredMetersPerPixelX}x, (${desiredMetersPerPixelY}y
+             zoom: ${zoom}`);
+
   // Clamp zoom between reasonable values
-  zoom = Math.max(8, Math.min(15, zoom));
+  zoom = Math.max(cfg('MAP_ZOOM_MIN'), Math.min(cfg('MAP_ZOOM_MAX'), zoom));
 
   return(zoom);
 }
