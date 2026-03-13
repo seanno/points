@@ -107,9 +107,9 @@ export class Orchestrator
 	this.#poiHistory[nextPoi.id] = true;
 	this.#poiLastPop = new Date();
 
-	dbg(`poi.popped ${nextPoi.id}`);
+	dbg(`poi.popped ${nextPoi.id}; queue length is now ${this.#poiQueue.length}`);
 	
-	if (this.#poiQueue.length === 0) { dbg('poi.trigger-fetch'); this.#fetchPOIs(); }
+	if (this.#poiQueue.length < 2) { dbg('poi.trigger-fetch'); this.#fetchPOIs(); }
 	this.#newPoiCallback(nextPoi);
   }
   
@@ -145,11 +145,16 @@ export class Orchestrator
     try {
 
 	  // get points of interest
-      let pois = await fetchPoints(pos.lat, pos.lng, cfg('POI_FETCH_RADIUS_MILES'));
+      const fetchedPois = await fetchPoints(pos.lat, pos.lng, cfg('POI_FETCH_RADIUS_MILES'));
 
 	  // filter out ones we've shown this session
-      pois = pois.filter(poi => !this.#poiHistory[poi.id]);
+      let pois = fetchedPois.filter(poi => !this.#poiHistory[poi.id]);
+	  dbg(`poi.fetched count = ${fetchedPois.length}, filtered = ${pois.length}`);
 
+	  // if we've seen them all, just use what we found again. But if there is even
+	  // one new one, take it! We'll search again soon but that's OK.
+	  if (pois.length === 0) pois = fetchedPois; 
+		
 	  // score and sort
       const dir = this.getCurrentBearing();
       pois.forEach(poi => { poi.score = this.#scorePOI(poi, pos, dir); });
