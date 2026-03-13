@@ -12,7 +12,7 @@ const configMap = {
   POI_INTERVAL_MS: 1 * 60 * 1000, // 2 minutes
 
   MAP_ZOOM_DEFAULT: 13,
-  MAP_ZOOM_MIN: 8,
+  MAP_ZOOM_MIN: 7,
   MAP_ZOOM_MAX: 15,
 
   POI_FETCH_RADIUS_MILES: 80,
@@ -34,13 +34,13 @@ export function cfg(name) {
 
 const debugMap = {
 
-  NONE: true, // true to mute all without changing individually
+  NONE: false, // true to mute all without changing individually
 
   orch: false, // orchestrator lifecycle events
   pos: false, // related to position
   poi: false, // related to points of interest
   poideets: false, // verbose poi details
-  zoom: true,
+  zoom: false,
   
   wiki: false, // wikidata queries
   claude: false // claude queries

@@ -348,22 +348,23 @@ function calculateZoom() {
   const lngDiff = Math.abs(poi.location.lng - pos.lng) * lngMetersPerDegree;
 
   // Calculate required zoom for each dimension
-  const desiredMetersPerPixelY = (latDiff * 2.8) / mapSize.y; // 2.4 = 2 * 1.2 padding
-  const desiredMetersPerPixelX = (lngDiff * 2.8) / mapSize.x;
+  const desiredMetersPerPixelY = (latDiff * 2.4) / mapSize.y; // 2.4 = 2 * 1.2 padding
+  const desiredMetersPerPixelX = (lngDiff * 2.4) / mapSize.x;
 
   // Use the larger metersPerPixel (more zoomed out) to ensure both dimensions fit
   const desiredMetersPerPixel = Math.max(desiredMetersPerPixelX, desiredMetersPerPixelY);
 
-  let zoom = Math.log2(156543.03392 * Math.cos(pos.lat * Math.PI / 180) / desiredMetersPerPixel);
+  const zoom = Math.log2(156543.03392 * Math.cos(pos.lat * Math.PI / 180) / desiredMetersPerPixel);
+
+  // Clamp zoom between reasonable values
+  const zoomFinal = Math.max(cfg('MAP_ZOOM_MIN'), Math.min(cfg('MAP_ZOOM_MAX'), Math.floor(zoom)));
 
   dbg(`zoom. dist: ${distance}m
              map: ${mapSize.x}dx, ${mapSize.y}dy
              diff: ${latDiff}lat, ${lngDiff}lng
              mpp: ${desiredMetersPerPixel}m,  (${desiredMetersPerPixelX}x, (${desiredMetersPerPixelY}y
-             zoom: ${zoom}`);
+             zoom: ${zoom}, FINAL: ${zoomFinal}`);
 
-  // Clamp zoom between reasonable values
-  zoom = Math.max(cfg('MAP_ZOOM_MIN'), Math.min(cfg('MAP_ZOOM_MAX'), zoom));
 
-  return(zoom);
+  return(zoomFinal);
 }
