@@ -17,7 +17,7 @@ window.addEventListener('load', (evt) => {
   orchestrator = new Orchestrator(newPos, newPoi);
 
   $('#more-button').click((evt) => explainPoi(evt));
-  $('#next-button').click((evt) => orchestrator.popNextPOI());
+  $('#next-button').click((evt) => { if (!orchestrator.popNextPOI()) alertEmptyQueue(); });
   $('#share-button').click((evt) => shareCurrentPoi());
   $('#recenter-button').click((evt) => manualModeOff());
 
@@ -368,3 +368,33 @@ function calculateZoom() {
 
   return(zoomFinal);
 }
+
+// +-------------+
+// | Empty Queue |
+// +-------------+
+
+let toastTimeout = null;
+
+function alertEmptyQueue() {
+  showToast('Queue Empty');
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+
+  // Clear any existing timeout
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+  }
+
+  // Show toast
+  toast.classList.add('show');
+
+  // Hide after 1 second
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+    toastTimeout = null;
+  }, 1000);
+}
+

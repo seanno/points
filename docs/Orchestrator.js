@@ -101,7 +101,7 @@ export class Orchestrator
   // +------------+
 
   popNextPOI() {
-	if (this.#poiQueue.length === 0) { dbg('poi.no-pois'); return(null); }
+	if (this.#poiQueue.length === 0) { dbg('poi.no-pois'); return(false); }
 
 	const nextPoi = this.#poiQueue.pop();
 	this.#poiHistory[nextPoi.id] = true;
@@ -111,6 +111,7 @@ export class Orchestrator
 	
 	if (this.#poiQueue.length < 2) { dbg('poi.trigger-fetch'); this.#fetchPOIs(); }
 	this.#newPoiCallback(nextPoi);
+	return(true);
   }
   
   #scorePOI(poi, pos, dir) {
