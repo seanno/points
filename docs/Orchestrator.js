@@ -212,7 +212,7 @@ export class Orchestrator
 
   getCurrentBearing() {
 	if (this.#positions.length < 2) return(null);
-	return(calculateBearingDegrees(this.#positions[0], this.#positions[1]));
+	return(calculateBearingDegrees(this.#positions[1], this.#positions[0]));
   }
 
   #updatePosition(watchPos) {
