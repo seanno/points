@@ -52,7 +52,7 @@ export class Orchestrator
 	  }
 
 	  const watchOptions = {
-        enableHighAccuracy: false,
+        enableHighAccuracy: true,
         maximumAge: 0,
         timeout: 10000,
 	  };
@@ -103,6 +103,9 @@ export class Orchestrator
   popNextPOI() {
 	if (this.#poiQueue.length === 0) { dbg('poi.no-pois'); return(false); }
 
+	// redo this score and sort every time to ensure we're looking ahead
+	this.#scoreAndSortPOIs();
+
 	const nextPoi = this.#poiQueue.pop();
 	this.#poiHistory[nextPoi.id] = true;
 	this.#poiLastPop = new Date();
@@ -113,7 +116,17 @@ export class Orchestrator
 	this.#newPoiCallback(nextPoi);
 	return(true);
   }
-  
+
+  #scoreAndSortPOIs() {
+    if (this.#poiQueue.length === 1) return;
+	const start = new Date();
+	const pos = this.getCurrentPosition();
+    const dir = this.getCurrentBearing();
+    this.#poiQueue.forEach(poi => { poi.score = this.#scorePOI(poi, pos, dir); });
+    this.#poiQueue.sort((a, b) => b.score - a.score); // closest at END for us to pop from
+	dbg(`poi.scoreAndSort time: ${new Date() - start}ms`);
+  }
+
   #scorePOI(poi, pos, dir) {
   
 	const distance = calculateDistanceMiles(pos, poi.location)
@@ -156,10 +169,6 @@ export class Orchestrator
 	  // one new one, take it! We'll search again soon but that's OK.
 	  if (pois.length === 0) pois = fetchedPois; 
 		
-	  // score and sort
-      const dir = this.getCurrentBearing();
-      pois.forEach(poi => { poi.score = this.#scorePOI(poi, pos, dir); });
-      pois.sort((a, b) => b.score - a.score); // closest at END for us to pop from
 	  this.#poiQueue = pois;
 	  
     } catch (error) {
