@@ -14,7 +14,7 @@ let orchestrator = null;
 
 window.addEventListener('load', (evt) => {
   
-  orchestrator = new Orchestrator(newPos, newPoi);
+  orchestrator = new Orchestrator(newPos, newPoi, currentlySpeaking);
 
   $('#more-button').click((evt) => explainPoi(evt));
   $('#next-button').click((evt) => { if (!orchestrator.popNextPOI()) alertEmptyQueue(); });
@@ -93,6 +93,10 @@ function newPoi(newPoi) {
 
 let synth = window.speechSynthesis;
 let speaking = false;
+
+function currentlySpeaking() {
+  return(speaking);
+}
 
 function explainPoi(evt) {
 

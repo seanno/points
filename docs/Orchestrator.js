@@ -18,6 +18,7 @@ export class Orchestrator
 
   #newPosCallback;
   #newPoiCallback;
+  #currentlySpeaking;
   
   #positions;
   #watchId;
@@ -29,11 +30,12 @@ export class Orchestrator
   #poiLastPop;
   #intervalId;
 
-  constructor(newPosCallback, newPoiCallback) {
+  constructor(newPosCallback, newPoiCallback, currentlySpeaking) {
 	dbg('orch.constructor');
 	
 	this.#newPosCallback = newPosCallback;
 	this.#newPoiCallback = newPoiCallback;
+	this.#currentlySpeaking = currentlySpeaking;
 	
     this.#initPositions();
     this.#initPOIs();
@@ -75,6 +77,10 @@ export class Orchestrator
 		
 		const now = new Date();
 		if (!this.#poiLastPop || ((now - this.#poiLastPop) >= cfg('POI_INTERVAL_MS'))) {
+		  if (this.#currentlySpeaking()) {
+			dbg('poi.speaking; deferring timeout pop');
+			return;
+		  }
 		  dbg(`poi.timeout hit: last=${this.#poiLastPop} now=${now}`);
 		  this.popNextPOI();
 		}
