@@ -9,7 +9,7 @@
 const configMap = {
 
   HEARTBEAT_INTERVAL_MS: 5 * 1000, // 5 seconds
-  POI_INTERVAL_MS: 90 * 1000, // 1.5 minutes
+  POI_INTERVAL_MS: 60 * 1000, // 1 minute
 
   MAP_ZOOM_DEFAULT: 13,
   MAP_ZOOM_MIN: 7,

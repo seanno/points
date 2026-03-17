@@ -201,7 +201,7 @@ button:disabled {
   min-height: 48px;
 }
 
-.fs-button {
+.fs-button, .chime-button {
   flex: 0 0 48px;
   width: 48px;
   height: 48px;
