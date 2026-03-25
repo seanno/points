@@ -54,6 +54,33 @@ export function angleDifferenceDegrees(bearing1, bearing2) {
   return(diff > 180 ? 360 - diff : diff);
 }
 
+// +--------------------------+
+// | calculateDestinationPoint |
+// +--------------------------+
+
+export function calculateDestinationPoint(lat, lng, bearingDegrees, distanceMiles) {
+
+  const lat1 = toRadians(lat);
+  const lng1 = toRadians(lng);
+  const bearing = toRadians(bearingDegrees);
+  const angularDistance = distanceMiles / 3959; // Earth radius in miles
+
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(angularDistance) +
+    Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing)
+  );
+
+  const lng2 = lng1 + Math.atan2(
+    Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat1),
+    Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+  );
+
+  return {
+    lat: toDegrees(lat2),
+    lng: toDegrees(lng2)
+  };
+}
+
 // +---------+
 // | Helpers |
 // +---------+

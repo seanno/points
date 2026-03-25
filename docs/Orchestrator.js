@@ -7,7 +7,7 @@
 //
 
 import { cfg, dbg } from './config.js';
-import { calculateDistanceMiles, calculateBearingDegrees, angleDifferenceDegrees } from './geo.js';
+import { calculateDistanceMiles, calculateBearingDegrees, angleDifferenceDegrees, calculateDestinationPoint } from './geo.js';
 import { fetchPoints } from './wikidata.js';
 
 export class Orchestrator
@@ -152,20 +152,23 @@ export class Orchestrator
   }
 
   async #innerFetchPOIs() {
-	
+
 	const pos = this.getCurrentPosition();
-	
+
 	if (!pos) {
 	  console.log('nopos');
 	  this.#poiQueue = [];
 	  this.#poiLastPosition = null;
 	  return;
 	}
-	
+
+	// Use predicted position as search center when moving at speed
+	const searchPos = this.#getPredictedPosition();
+
     try {
 
 	  // get points of interest
-      const fetchedPois = await fetchPoints(pos.lat, pos.lng, cfg('POI_FETCH_RADIUS_MILES'));
+      const fetchedPois = await fetchPoints(searchPos.lat, searchPos.lng, cfg('POI_FETCH_RADIUS_MILES'));
 
 	  // filter out ones we've shown this session
       let pois = fetchedPois.filter(poi => !this.#poiHistory[poi.id]);
@@ -230,8 +233,46 @@ export class Orchestrator
 	return(calculateBearingDegrees(this.#positions[1], this.#positions[0]));
   }
 
+  #getCurrentSpeed() {
+	if (this.#positions.length < 2) return(0);
+
+	const pos1 = this.#positions[0]; // most recent
+	const pos2 = this.#positions[1]; // previous
+
+	const distanceMiles = calculateDistanceMiles(pos1, pos2);
+	const timeHours = (pos1.timestamp - pos2.timestamp) / (1000 * 60 * 60);
+
+	if (timeHours === 0) return(0);
+	return(distanceMiles / timeHours); // mph
+  }
+
+  #getPredictedPosition() {
+	const currentPos = this.getCurrentPosition();
+	const speed = this.#getCurrentSpeed();
+	const bearing = this.getCurrentBearing();
+
+	// If not moving fast enough or no bearing, use current position
+	if (!currentPos || !bearing || speed < cfg('POI_PREDICT_MIN_SPEED_MPH')) {
+	  return(currentPos);
+	}
+
+	// Predict ahead by half the fetch trigger distance
+	const distanceMiles = cfg('POI_FETCH_TRIGGER_MILES') / 2;
+
+	// Calculate predicted position based on current bearing and speed
+	const predicted = calculateDestinationPoint(currentPos.lat, currentPos.lng, bearing, distanceMiles);
+
+	dbg(`poi.predicted position: speed=${speed.toFixed(1)}mph, distance=${distanceMiles.toFixed(1)}mi, bearing=${bearing.toFixed(0)}°`);
+
+	return(predicted);
+  }
+
   #updatePosition(watchPos) {
-	const pos = { lat: watchPos.coords.latitude, lng: watchPos.coords.longitude };
+	const pos = {
+	  lat: watchPos.coords.latitude,
+	  lng: watchPos.coords.longitude,
+	  timestamp: new Date()
+	};
 	dbg(`pos.updated ${JSON.stringify(pos)}`);
 	this.#positions.unshift(pos);
 	if (this.#positions.length > 2) this.#positions.pop();
