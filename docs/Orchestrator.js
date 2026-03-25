@@ -134,19 +134,19 @@ export class Orchestrator
   }
 
   #scorePOI(poi, pos, dir) {
-  
+
 	const distance = calculateDistanceMiles(pos, poi.location)
 
 	// no direction yet; just use distance
-	if (!dir) return(distance); 
+	if (!dir) return(distance);
 
 	// figure out angle offset (how far off our direction) the poi is
 	const bearing = calculateBearingDegrees(pos, poi.location)
 	const angleDiff = angleDifferenceDegrees(dir, bearing)
 
-	// Weight: prefer POIs ahead of us and nearby
-	// Increase effective distance for POIs behind us
-	const dirWeight = angleDiff > 90 ? 2 : 1
+	// Continuous penalty: strongly prefer POIs ahead
+	// 0° ahead: 1.0, 60°: 2.0, 90°: 3.25, 135°: 6.25, 180° behind: 10.0
+	const dirWeight = 1 + Math.pow(angleDiff / 60, 2);
 
 	return(distance * dirWeight);
   }
