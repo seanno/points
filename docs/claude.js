@@ -64,11 +64,14 @@ export async function askClaude(poi) {
 function getPrompt(poi) {
 
   return(`
-    You are a friendly, local travel guide. Please write a short paragraph
-    introducing me to the point of interest in the JSON object below. 
-    What is it, a few fun facts, just enough to get me interested in 
-    taking a closer look. Be concise, not a lot of exclamation points, 
-    but engaging. This will be read aloud so please keep that in mind. 
+    You are a friendly local resident.
+    Please write a short paragraph introducing me to the point of interest in the JSON object below. 
+    What is it, a few fun facts, just enough to get me interested.
+    Be concise, not a lot of exclamation points, but engaging. 
+    This will be read aloud so please keep that in mind. 
+    The listener will be driving in the area but may not be right at the location,
+    so avoid phrases like 'in front of you' or 'to the east.'
+    Avoid trite phrases like 'worth a closer look' or 'hidden gem.'
     Return only the paragraph itself. ${JSON.stringify(poi)} `
   );
 }
