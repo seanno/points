@@ -114,6 +114,8 @@ export class Orchestrator
   // +------------+
 
   popNextPOI() {
+	if (this.#poiQueue.length < 3) { dbg('poi.trigger-fetch'); this.#fetchPOIs(); }
+
 	if (this.#poiQueue.length === 0) { dbg('poi.no-pois'); return(false); }
 
 	// redo this score and sort every time to ensure we're looking ahead
@@ -124,8 +126,7 @@ export class Orchestrator
 	this.#poiLastPop = new Date();
 
 	dbg(`poi.popped ${nextPoi.id}; queue length is now ${this.#poiQueue.length}`);
-	
-	if (this.#poiQueue.length < 2) { dbg('poi.trigger-fetch'); this.#fetchPOIs(); }
+
 	this.#newPoiCallback(nextPoi);
 	return(true);
   }
@@ -158,6 +159,45 @@ export class Orchestrator
 	return(distance * dirWeight);
   }
 
+  async #progressiveFetchAndFilter(searchPos) {
+	const minDesiredPois = cfg('POI_MIN_DESIRED_COUNT');
+	const radii = cfg('POI_PROGRESSIVE_RADII');
+	let lastSuccessfulPois = null;
+
+	for (const radius of radii) {
+	  try {
+		// Fetch POIs at this radius
+		const fetchedPois = await fetchPoints(searchPos.lat, searchPos.lng, radius);
+
+		// Filter out ones we've shown this session
+		let pois = fetchedPois.filter(poi => !this.#poiHistory[poi.id]);
+		dbg(`poi.fetched count = ${fetchedPois.length}, filtered = ${pois.length} at radius ${radius}mi`);
+
+		// Save this result in case we need it
+		lastSuccessfulPois = pois.length > 0 ? pois : fetchedPois;
+
+		// If we have enough filtered POIs, we're done
+		if (pois.length >= minDesiredPois) {
+		  dbg(`poi.success at ${radius}mi with ${pois.length} filtered pois`);
+		  return pois;
+		}
+
+		dbg(`poi.only ${pois.length} filtered pois at ${radius}mi, trying larger radius`);
+
+	  } catch (error) {
+		// On error at smallest radius, fail immediately
+		if (radius === radii[0]) {
+		  throw error;
+		}
+		// Otherwise try larger radius (dense areas timeout, sparse areas succeed)
+		dbg(`poi.error at ${radius}mi: ${error.message}, trying larger radius`);
+	  }
+	}
+
+	// Tried all radii - return last successful result or empty array
+	return lastSuccessfulPois || [];
+  }
+
   async #innerFetchPOIs() {
 
 	const pos = this.getCurrentPosition();
@@ -173,22 +213,8 @@ export class Orchestrator
 	const searchPos = this.#getPredictedPosition();
 
     try {
-
-	  // get points of interest
-      const fetchedPois = await fetchPoints(searchPos.lat, searchPos.lng, cfg('POI_FETCH_RADIUS_MILES'));
-
-	  // filter out ones we've shown this session
-      let pois = fetchedPois.filter(poi => !this.#poiHistory[poi.id]);
-	  dbg(`poi.fetched count = ${fetchedPois.length}, filtered = ${pois.length}`);
-
-	  // if we've seen them all, just use what we found again. But if there is even
-	  // one new one, take it! We'll search again soon but that's OK.
-	  if (pois.length === 0) pois = fetchedPois; 
-		
-	  this.#poiQueue = pois;
-	  
+	  this.#poiQueue = await this.#progressiveFetchAndFilter(searchPos);
     } catch (error) {
-	  
       console.error('Error fetching POIs:', error)
 	  this.#poiQueue = [];
     }
@@ -198,14 +224,11 @@ export class Orchestrator
   }
   
   async #fetchPOIs() {
-	try {
-	  if (this.#poiFetchInProgress) return;
-	  this.#poiFetchInProgress = true;
-	  await this.#innerFetchPOIs();
-	}
-	finally {
-	  this.#poiFetchInProgress = false;
-	}
+	if (this.#poiFetchInProgress) return;
+	this.#poiFetchInProgress = true;
+	
+	try { await this.#innerFetchPOIs(); }
+	finally { this.#poiFetchInProgress = false;	}
   }
 
   #maybeFetchPOIs() {

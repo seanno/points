@@ -18,6 +18,8 @@ const configMap = {
   POI_FETCH_RADIUS_MILES: 80,
   POI_FETCH_TRIGGER_MILES: 10,
   POI_PREDICT_MIN_SPEED_MPH: 20,
+  POI_MIN_DESIRED_COUNT: 20,
+  POI_PROGRESSIVE_RADII: [10, 20, 40, 80],
 
   CLAUDE_API_VERSION: '2023-06-01',
   CLAUDE_MODEL: 'claude-sonnet-4-6',
@@ -25,11 +27,11 @@ const configMap = {
   CLAUDE_ROLE: 'user',
 
   // Mock geolocation for testing (null for real GPS)
-  DISABLED_MOCK_GEOLOCATION: {
-	start: { lat: 34.255338, lng: -119.263290 }, // 3065 Seahorse Ave, Ventura, CA
-	end: { lat: 47.6258, lng: -122.1643 }, // 2824 140th Ave NE, Bellevue, WA
-	// start: { lat: 40.7128, lng: -74.0060 }, // NYC
-	//end: { lat: 42.3601, lng: -71.0589 }, // Boston
+  MOCK_GEOLOCATION: {
+	//start: { lat: 34.255338, lng: -119.263290 }, // 3065 Seahorse Ave, Ventura, CA
+	//end: { lat: 47.6258, lng: -122.1643 }, // 2824 140th Ave NE, Bellevue, WA
+	start: { lat: 40.7128, lng: -74.0060 }, // NYC
+	end: { lat: 42.3601, lng: -71.0589 }, // Boston
 	speedMph: 65,
 	intervalMs: 5000
   }
@@ -50,11 +52,11 @@ const debugMap = {
 
   orch: false, // orchestrator lifecycle events
   pos: false, // related to position
-  poi: false, // related to points of interest
+  poi: true, // related to points of interest
   poideets: false, // verbose poi details
   zoom: false,
   
-  wiki: false, // wikidata queries
+  wiki: true, // wikidata queries
   claude: false // claude queries
 }
 

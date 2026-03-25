@@ -2,7 +2,7 @@
 // WIKIDATA.JS
 //
 
-import { dbg } from './config.js';
+import { cfg,dbg } from './config.js';
 
 // WikiData API wrapper
 
@@ -36,9 +36,6 @@ function buildPOIQuery(lat, lng, radiusMiles) {
            (SAMPLE(?image) AS ?image)
            (SAMPLE(?interestingTypeLabel) AS ?interestingTypeLabel)
            (SAMPLE(?adminDiv1Label) AS ?adminDiv1Label)
-           (SAMPLE(?adminDiv2Label) AS ?adminDiv2Label)
-           (SAMPLE(?adminDiv3Label) AS ?adminDiv3Label)
-           (SAMPLE(?adminDiv4Label) AS ?adminDiv4Label)
     WHERE {
 
       # Search for items with coordinates within radius
@@ -49,37 +46,50 @@ function buildPOIQuery(lat, lng, radiusMiles) {
         bd:serviceParam wikibase:distance ?dist.
       }
 
-      # Filter for interesting types of POIs (using broader categories + hierarchy)
+      # Filter for interesting types of POIs (broader categories + common specific types)
       VALUES ?interestingType {
-        wd:Q570116    # tourist attraction (catches castles, lighthouses, monuments, etc.)
+        # Broad categories
+        wd:Q570116    # tourist attraction
         wd:Q33506     # museum
         wd:Q863454    # national park
         wd:Q839954    # archaeological site
-        wd:Q271669    # landform (mountains, valleys, hills, canyons, etc.)
-        wd:Q15324     # body of water (lakes, rivers, waterfalls, springs, etc.)
-        wd:Q811979    # architectural structure (bridges, towers, lighthouses, monuments)
-        wd:Q1785071   # facility (mines, dams, industrial sites, etc.)
+        wd:Q271669    # landform
+        wd:Q15324     # body of water
+        wd:Q811979    # architectural structure
+        wd:Q1785071   # facility
+
+        # Common specific types to catch with 1-hop
+        wd:Q23413     # castle
+        wd:Q39715     # lighthouse
+        wd:Q4989906   # monument
+        wd:Q12280     # bridge
+        wd:Q12518     # tower
+        wd:Q16970     # church
+        wd:Q41176     # building (catches many historic buildings)
+        wd:Q179700    # statue
+        wd:Q34627     # synagogue
+        wd:Q44539     # temple/shrine
+        wd:Q2977      # cathedral
+        wd:Q1307276   # viewpoint
+        wd:Q22698     # park
+        wd:Q34038     # waterfall
+        wd:Q8502      # mountain
+        wd:Q23397     # lake
+        wd:Q4022      # river
+        wd:Q35509     # cave
+        wd:Q40080     # beach
+        wd:Q1107656   # garden
       }
 
-      # Item must be instance of something that is a subclass of interesting type
-      ?item wdt:P31/wdt:P279* ?interestingType.
+      # Item must be instance of type, and type can be 0-1 subclass away from interesting type
+      ?item wdt:P31 ?type.
+      ?type wdt:P279? ?interestingType.
 
       # Get optional image
       OPTIONAL { ?item wdt:P18 ?image. }
 
-      # Get administrative divisions - skip div1, get div2, div3, and div4
-      OPTIONAL {
-        ?item wdt:P131 ?adminDiv1.
-        OPTIONAL {
-          ?adminDiv1 wdt:P131 ?adminDiv2.
-          OPTIONAL {
-            ?adminDiv2 wdt:P131 ?adminDiv3.
-            OPTIONAL {
-              ?adminDiv3 wdt:P131 ?adminDiv4.
-            }
-          }
-        }
-      }
+      # Get immediate administrative parent (city/county/state)
+      OPTIONAL { ?item wdt:P131 ?adminDiv1. }
 
       # Get labels and descriptions
       SERVICE wikibase:label {
@@ -120,9 +130,6 @@ function parseResults(data) {
       image: img,
       url: binding.item.value,
       adminDiv1: binding.adminDiv1Label?.value || null,
-      adminDiv2: binding.adminDiv2Label?.value || null,
-      adminDiv3: binding.adminDiv3Label?.value || null,
-      adminDiv4: binding.adminDiv4Label?.value || null,
     }
   }).filter(poi => poi.location.lat !== null && poi.location.lng !== null)
 }
@@ -132,13 +139,13 @@ function parseResults(data) {
 // +------------+
 
 /**
- * Fetch POIs from WikiData within a radius
+ * Fetch POIs from WikiData with a specific radius
  * @param {number} lat - Latitude
  * @param {number} lng - Longitude
  * @param {number} radiusMiles - Search radius in miles
  * @returns {Promise<Array>} Array of POI objects
  */
-export async function fetchPoints(lat, lng, radiusMiles) {
+async function fetchPointsAtRadius(lat, lng, radiusMiles) {
   const query = buildPOIQuery(lat, lng, radiusMiles)
 
   try {
@@ -151,7 +158,7 @@ export async function fetchPoints(lat, lng, radiusMiles) {
     const timeoutId = setTimeout(() => controller.abort(), QUERY_TIMEOUT_MS)
 
     try {
-	  dbg('wiki.start');
+	  dbg(`wiki.start radius=${radiusMiles}mi`);
       const response = await fetch(url, {
         headers: {
           'Accept': 'application/sparql-results+json',
@@ -170,7 +177,7 @@ export async function fetchPoints(lat, lng, radiusMiles) {
       const data = await response.json()
 	  const results = parseResults(data);
 
-	  dbg(`wiki.${results.length} pois retunred`);
+	  dbg(`wiki.${results.length} pois returned`);
 	  return(results);
 	  
     } catch (error) {
@@ -185,4 +192,15 @@ export async function fetchPoints(lat, lng, radiusMiles) {
     console.error('Error fetching POIs from WikiData:', error)
     throw error
   }
+}
+
+/**
+ * Fetch POIs from WikiData within a radius
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @param {number} radiusMiles - Search radius in miles
+ * @returns {Promise<Array>} Array of POI objects
+ */
+export async function fetchPoints(lat, lng, radiusMiles) {
+  return await fetchPointsAtRadius(lat, lng, radiusMiles);
 }
