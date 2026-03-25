@@ -22,7 +22,18 @@ const configMap = {
   CLAUDE_API_VERSION: '2023-06-01',
   CLAUDE_MODEL: 'claude-sonnet-4-6',
   CLAUDE_MAX_TOKENS: 1024,
-  CLAUDE_ROLE: 'user'
+  CLAUDE_ROLE: 'user',
+
+  // Mock geolocation for testing (null for real GPS)
+  DISABLED_MOCK_GEOLOCATION: {
+	start: { lat: 34.255338, lng: -119.263290 }, // 3065 Seahorse Ave, Ventura, CA
+	end: { lat: 47.6258, lng: -122.1643 }, // 2824 140th Ave NE, Bellevue, WA
+	// start: { lat: 40.7128, lng: -74.0060 }, // NYC
+	//end: { lat: 42.3601, lng: -71.0589 }, // Boston
+	speedMph: 65,
+	intervalMs: 5000
+  }
+
 }
 
 export function cfg(name) {

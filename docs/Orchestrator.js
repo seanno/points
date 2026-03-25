@@ -9,6 +9,7 @@
 import { cfg, dbg } from './config.js';
 import { calculateDistanceMiles, calculateBearingDegrees, angleDifferenceDegrees, calculateDestinationPoint } from './geo.js';
 import { fetchPoints } from './wikidata.js';
+import { createMockGeolocation } from './mockGeolocation.js';
 
 export class Orchestrator
 {
@@ -19,10 +20,11 @@ export class Orchestrator
   #newPosCallback;
   #newPoiCallback;
   #currentlySpeaking;
-  
+
   #positions;
   #watchId;
-  
+  #geolocation;
+
   #poiQueue;
   #poiHistory;
   #poiFetchInProgress;
@@ -47,8 +49,12 @@ export class Orchestrator
 	dbg('orch.startTimers');
 
 	if (!this.#watchId) {
-	  
-	  if (!navigator.geolocation) {
+
+	  // Use mock geolocation if configured, otherwise use real GPS
+	  const mockConfig = cfg('MOCK_GEOLOCATION');
+	  this.#geolocation = mockConfig ? createMockGeolocation(mockConfig) : navigator.geolocation;
+
+	  if (!this.#geolocation) {
 		console.error('geolocation not supported');
 		return;
 	  }
@@ -59,7 +65,7 @@ export class Orchestrator
         timeout: 10000,
 	  };
 
-	  this.#watchId = navigator.geolocation.watchPosition(
+	  this.#watchId = this.#geolocation.watchPosition(
 		(pos) => { this.#updatePosition(pos); },
 		(error) => { console.log('watchPosition error', error); },
 		watchOptions
@@ -90,10 +96,11 @@ export class Orchestrator
 
   clearTimers() {
 	dbg('orch.clearTimers');
-	
-	if (this.#watchId) {
-	  navigator.geolocation.clearWatch(this.#watchId);
+
+	if (this.#watchId && this.#geolocation) {
+	  this.#geolocation.clearWatch(this.#watchId);
 	  this.#watchId = undefined;
+	  this.#geolocation = undefined;
 	}
 
 	if (this.#intervalId) {
