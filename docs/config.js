@@ -27,9 +27,7 @@ const configMap = {
   CLAUDE_ROLE: 'user',
 
   // Mock geolocation for testing (null for real GPS)
-  MOCK_GEOLOCATION: {
-	//start: { lat: 34.255338, lng: -119.263290 }, // 3065 Seahorse Ave, Ventura, CA
-	//end: { lat: 47.6258, lng: -122.1643 }, // 2824 140th Ave NE, Bellevue, WA
+  DISABLE_MOCK_GEOLOCATION: {
 	start: { lat: 40.7128, lng: -74.0060 }, // NYC
 	end: { lat: 42.3601, lng: -71.0589 }, // Boston
 	speedMph: 65,
@@ -52,11 +50,11 @@ const debugMap = {
 
   orch: false, // orchestrator lifecycle events
   pos: false, // related to position
-  poi: true, // related to points of interest
+  poi: false, // related to points of interest
   poideets: false, // verbose poi details
   zoom: false,
   
-  wiki: true, // wikidata queries
+  wiki: false, // wikidata queries
   claude: false // claude queries
 }
 
