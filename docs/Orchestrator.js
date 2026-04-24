@@ -125,6 +125,18 @@ export class Orchestrator
 	this.#poiHistory[nextPoi.id] = true;
 	this.#poiLastPop = new Date();
 
+	// If the best POI was behind us, all remaining ones are too —
+	// trigger a fresh fetch now rather than waiting for the queue to drain
+	const dir = this.getCurrentBearing();
+	if (dir) {
+	  const bearing = calculateBearingDegrees(this.getCurrentPosition(), nextPoi.location);
+	  const angleDiff = angleDifferenceDegrees(dir, bearing);
+	  if (angleDiff > 90) {
+		dbg(`poi.best-poi-behind-us (${angleDiff.toFixed(0)}°); triggering fetch`);
+		this.#fetchPOIs();
+	  }
+	}
+
 	dbg(`poi.popped ${nextPoi.id}; queue length is now ${this.#poiQueue.length}`);
 
 	this.#newPoiCallback(nextPoi);
