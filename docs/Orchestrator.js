@@ -30,6 +30,7 @@ export class Orchestrator
   #poiFetchInProgress;
   #poiLastPosition;
   #poiLastPop;
+  #lastShownType;
   #intervalId;
 
   constructor(newPosCallback, newPoiCallback, currentlySpeaking) {
@@ -121,27 +122,42 @@ export class Orchestrator
 	// redo this score and sort every time to ensure we're looking ahead
 	this.#scoreAndSortPOIs();
 
-	const nextPoi = this.#poiQueue.pop();
-	this.#poiHistory[nextPoi.id] = true;
-	this.#poiLastPop = new Date();
+	// Exclude behind-you POIs; fall back to full queue if nothing is ahead
+	const aheadPois = this.#poiQueue.filter(p => !p.behind);
+	const candidates = aheadPois.length > 0 ? aheadPois : this.#poiQueue;
 
-	// If the best POI was behind us, all remaining ones are too —
-	// trigger a fresh fetch now rather than waiting for the queue to drain
-	const dir = this.getCurrentBearing();
-	if (dir) {
-	  const bearing = calculateBearingDegrees(this.getCurrentPosition(), nextPoi.location);
-	  const angleDiff = angleDifferenceDegrees(dir, bearing);
-	  if (angleDiff > 90) {
-		dbg(`poi.best-poi-behind-us (${angleDiff.toFixed(0)}°); triggering fetch`);
-		this.#fetchPOIs();
+	// Diversity lookahead: scan up to POI_DIVERSITY_LOOKAHEAD candidates (best first).
+	// Pick the first with a different type than last shown; fall back to best if none found.
+	const lookahead = cfg('POI_DIVERSITY_LOOKAHEAD');
+	let chosen = candidates[candidates.length - 1]; // default: best-scored
+
+	for (let i = 0; i < Math.min(lookahead, candidates.length); i++) {
+	  const candidate = candidates[candidates.length - 1 - i];
+	  dbg(`diversity.i=${i} type=${candidate.type} last=${this.#lastShownType}`);
+	  if (candidate.type !== this.#lastShownType) {
+		chosen = candidate;
+		break;
 	  }
 	}
 
-	dbg(`poi.popped ${nextPoi.id}; queue length is now ${this.#poiQueue.length}`);
+	const nextPoi = this.#poiQueue.splice(this.#poiQueue.findIndex(p => p.id === chosen.id), 1)[0];
+	this.#lastShownType = nextPoi.type;
+	this.#poiHistory[nextPoi.id] = true;
+	this.#poiLastPop = new Date();
+
+	// If chosen POI is behind us, all remaining ones likely are too —
+	// trigger a fresh fetch now rather than waiting for the queue to drain
+	if (nextPoi.behind) {
+	  dbg(`poi.best-poi-behind-us; triggering fetch`);
+	  this.#fetchPOIs();
+	}
+
+	dbg(`poi.popped ${nextPoi.id} (type: ${nextPoi.type}); queue length is now ${this.#poiQueue.length}`);
 
 	this.#newPoiCallback(nextPoi);
 	return(true);
   }
+
 
   #scoreAndSortPOIs() {
     if (this.#poiQueue.length === 1) return;
@@ -158,11 +174,13 @@ export class Orchestrator
 	const distance = calculateDistanceMiles(pos, poi.location)
 
 	// no direction yet; just use distance
-	if (!dir) return(distance);
+	if (!dir) { poi.behind = false; return(distance); }
 
 	// figure out angle offset (how far off our direction) the poi is
 	const bearing = calculateBearingDegrees(pos, poi.location)
 	const angleDiff = angleDifferenceDegrees(dir, bearing)
+
+	poi.behind = angleDiff > 90;
 
 	// Continuous penalty: strongly prefer POIs ahead
 	// 0° ahead: 1.0, 60°: 2.0, 90°: 3.25, 135°: 6.25, 180° behind: 10.0
@@ -259,6 +277,7 @@ export class Orchestrator
 	this.#poiFetchInProgress = false;
 	this.#poiLastPosition = null;
 	this.#poiLastPop = null;
+	this.#lastShownType = null;
   }
   
   // +--------------------+

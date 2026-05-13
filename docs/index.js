@@ -181,7 +181,7 @@ function updatePoiPane() {
   $('#poi-title').text(poi.title);
 
   $('#poi-type').text(poi.type);
-  $('#poi-description').text((poi.type ? '(' + poi.type + ') ' : '') + poi.description);
+  $('#poi-description').text(poi.description);
 
   if (poi.image) {
 	$('#poi-image').show();

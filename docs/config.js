@@ -51,6 +51,7 @@ const debugMap = {
   orch: false, // orchestrator lifecycle events
   pos: false, // related to position
   poi: false, // related to points of interest
+  diversity: false, // code to pick diverse points
   poideets: false, // verbose poi details
   zoom: false,
   

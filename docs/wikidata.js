@@ -34,7 +34,7 @@ function buildPOIQuery(lat, lng, radiusMiles) {
     SELECT ?item ?itemLabel ?itemDescription ?location
            (MIN(?dist) AS ?minDist)
            (SAMPLE(?image) AS ?image)
-           (SAMPLE(?interestingTypeLabel) AS ?interestingTypeLabel)
+           (SAMPLE(?type) AS ?type)
            (SAMPLE(?adminDiv1Label) AS ?adminDiv1Label)
     WHERE {
 
@@ -125,7 +125,7 @@ function parseResults(data) {
       id: binding.item.value.split('/').pop(),
       title: binding.itemLabel?.value || 'Unknown',
       description: binding.itemDescription?.value || '',
-      type: binding.interestingTypeLabel?.value || 'Point of Interest',
+      type: binding.type?.value?.split('/').pop() || 'unknown',
       location: { lat, lng },
       image: img,
       url: binding.item.value,
