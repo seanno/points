@@ -92,3 +92,28 @@ export function createMockGeolocation(mockConfig) {
     clearWatch
   };
 }
+
+export function createDemoGeolocation() {
+
+  const queryParams = new URLSearchParams(window.location.search);
+  
+  const lat1 = queryParams.get('lat1');
+  const lng1 = queryParams.get('lng1');
+  const lat2 = queryParams.get('lat2');
+  const lng2 = queryParams.get('lng2');
+
+  if (!lat1 || !lng1 || !lat2 || !lng2) return(undefined);
+
+  const speedMph = queryParams.get('mph');
+  const intervalMs = queryParams.get('int');
+  
+  const demoGeolocation = {
+	start: { lat: Number(lat1), lng: Number(lng1) },
+	end: { lat: Number(lat2), lng: Number(lng2) },
+	speedMph: speedMph ? Number(speedMph) : 65,
+	intervalMs: intervalMs ? Number(intervalMs) : 7500
+  };
+
+  return(createMockGeolocation(demoGeolocation));
+}
+

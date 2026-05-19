@@ -9,7 +9,7 @@
 import { cfg, dbg } from './config.js';
 import { calculateDistanceMiles, calculateBearingDegrees, angleDifferenceDegrees, calculateDestinationPoint } from './geo.js';
 import { fetchPoints } from './wikidata.js';
-import { createMockGeolocation } from './mockGeolocation.js';
+import { createDemoGeolocation, createMockGeolocation } from './mockGeolocation.js';
 
 export class Orchestrator
 {
@@ -51,9 +51,14 @@ export class Orchestrator
 
 	if (!this.#watchId) {
 
-	  // Use mock geolocation if configured, otherwise use real GPS
-	  const mockConfig = cfg('MOCK_GEOLOCATION');
-	  this.#geolocation = mockConfig ? createMockGeolocation(mockConfig) : navigator.geolocation;
+	  // Use demo geolocation if requested
+	  this.#geolocation = createDemoGeolocation();
+	  
+	  if (!this.#geolocation) {
+		// Use mock geolocation if configured, otherwise use real GPS
+		const mockConfig = cfg('MOCK_GEOLOCATION');
+		this.#geolocation = mockConfig ? createMockGeolocation(mockConfig) : navigator.geolocation;
+	  }
 
 	  if (!this.#geolocation) {
 		console.error('geolocation not supported');
